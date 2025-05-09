@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "336385744664",
+    "project_id": "teerplay-b4cf0",
+    "storage_bucket": "teerplay-b4cf0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336385744664:android:07aa1e2a6fa1599aac486d",
+        "android_client_info": {
+          "package_name": "com.jihan.teeradmin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOKhiQiq1dIZqXeHNts4JsonnekJNiVDg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:336385744664:android:3f943427f7d2bcf5ac486d",
+        "android_client_info": {
+          "package_name": "com.jihan.teerplay"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAOKhiQiq1dIZqXeHNts4JsonnekJNiVDg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
