@@ -73,6 +73,7 @@ import com.jihan.composeutils.CenterBox
 import com.jihan.composeutils.Gap
 import com.jihan.composeutils.isNumber
 import com.jihan.composeutils.text
+import com.jihan.composeutils.toast
 import com.jihan.teeradmin.Routes
 import com.jihan.teeradmin.data.models.MatchDetail
 import com.jihan.teeradmin.domain.viewmodel.EditMatchViewModel
@@ -110,6 +111,8 @@ fun EditMatchScreen(
     var isFrOpened by remember { mutableStateOf(matchDetail.isFrOpened) }
     var isSrOpened by remember { mutableStateOf(matchDetail.isFrOpened) }
 
+    var numberMultiplier by remember { mutableStateOf(matchDetail.numberMultiplier.toString()) }
+    var homeMultiplier by remember { mutableStateOf(matchDetail.homeMultiplier.toString()) }
 
     val viewModel = koinViewModel<EditMatchViewModel>()
 
@@ -240,6 +243,20 @@ fun EditMatchScreen(
                                     tint = Color(0xFFE0A82E)
                                 )
                             })
+                        Gap(16)
+                        CustomTextField(
+                            value = numberMultiplier,
+                            onValueChange = { numberMultiplier = it },
+                            label = "Number Multiplier"
+                          )
+
+                        Gap(16)
+                        CustomTextField(
+                            value = homeMultiplier,
+                            onValueChange = { homeMultiplier = it },
+                            label = "House & Ending Multiplier"
+                          )
+
                         Gap(16)
 
                         // Date Field
@@ -431,10 +448,15 @@ fun EditMatchScreen(
 
                 val isButtonEnabled = id.isNumber() && title.isNotEmpty() && date.isNotEmpty() && frTime.isNotEmpty() && srTime.isNotEmpty()
 
+
                 //! Update Button
                 Button(
                     onClick = {
 
+                        if (numberMultiplier.toDoubleOrNull()==null || homeMultiplier.toDoubleOrNull()==null){
+                            "Invalid Multiplier".toast(context)
+                            return@Button
+                        }
 
 
                         val matchInfo = mapOf<String, Any?>(
@@ -447,6 +469,9 @@ fun EditMatchScreen(
                             "srTime" to srTime,
                             "isFrOpened" to isFrOpened,
                             "isSrOpened" to isSrOpened ,
+                            "numberMultiplier" to numberMultiplier.toDouble(),
+                            "homeMultiplier" to homeMultiplier.toDouble(),
+
 
                         )
 
