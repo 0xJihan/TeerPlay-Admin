@@ -32,11 +32,17 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.composables.icons.lucide.BellRing
+import com.composables.icons.lucide.CircleDollarSign
 import com.composables.icons.lucide.Gamepad
+import com.composables.icons.lucide.GitCompareArrows
 import com.composables.icons.lucide.Link
 import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.PhoneCall
+import com.composables.icons.lucide.Users
+import com.jihan.composeutils.Cx
 import com.jihan.teeradmin.Routes
+import com.jihan.teeradmin.domain.viewmodel.PaymentViewmodel
+import org.koin.androidx.compose.koinViewModel
 
 data class DashboardItem(
     val id: Routes, val title: String, val icon: ImageVector, val color: Color,
@@ -48,32 +54,57 @@ fun AdminDashboard(
     navigateTo: (Routes) -> Unit = {},
 ) {
 
+    val paymentViewModel = koinViewModel<PaymentViewmodel>()
+
+
+
+
 
 
 
     val dashboardItems = listOf(
         DashboardItem(
+            id = Routes.UserList,
+            title = "Users",
+            icon = Lucide.Users,
+            color = Cx.gray500,
+        ),
+        DashboardItem(
             id = Routes.CreateMatchRoute,
             title = "Create Match",
             icon = Lucide.Gamepad,
-            color = MaterialTheme.colorScheme.primary,
+            color = Cx.blue500,
         ),
         DashboardItem(
             id = Routes.ContactRoute,
             title = "Contacts",
             icon = Lucide.PhoneCall,
-            color = MaterialTheme.colorScheme.secondary,
-        ),     DashboardItem(
+            color = Cx.green500,
+        ),
+        DashboardItem(
+            id = Routes.PaymentsRoute,
+            title = "Payments (${paymentViewModel.pendingUser})",
+            icon = Lucide.CircleDollarSign,
+            color = Cx.yellow500,
+        ),
+
+        DashboardItem(
             id = Routes.GenerateLinkRoutes,
             title = "Generate Link",
             icon = Lucide.Link,
-            color = MaterialTheme.colorScheme.secondary,
+            color = Cx.purple500,
         ),
         DashboardItem(
             id = Routes.NotificationRoute,
             title = "Notification",
             icon = Lucide.BellRing,
-            color = MaterialTheme.colorScheme.secondary,
+            color = Cx.cyan500,
+        ),
+        DashboardItem(
+            id = Routes.UpdateAppRoute,
+            title = "Update App",
+            icon = Lucide.GitCompareArrows,
+            color = Cx.lime500,
         ),
     )
 
