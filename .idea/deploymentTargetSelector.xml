@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="TeerPlayAdmin.app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-05-09T08:35:17.461649639Z">
+        <DropdownSelection timestamp="2025-05-14T17:09:13.325289027Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="LocalEmulator" identifier="path=/home/jihan/.android/avd/Pixel_8_Pro.avd" />
+              <DeviceId pluginId="PhysicalDevice" identifier="serial=055932507L014535" />
             </handle>
           </Target>
         </DropdownSelection>
