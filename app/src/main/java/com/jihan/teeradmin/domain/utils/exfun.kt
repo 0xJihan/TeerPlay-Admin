@@ -23,6 +23,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.google.firebase.Timestamp
 import com.jihan.composeutils.toast
 import com.michaelflisar.kotpreferences.core.interfaces.StorageSetting
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +31,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import retrofit2.Response
+import java.util.Calendar
+import java.util.Locale
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
 
@@ -174,4 +177,33 @@ suspend fun <T, R> handleResponse(
 }
 
 
+
+fun Timestamp?.formatRelativeTime(): String {
+    if (this == null) return "Unknown time"
+
+    val now = System.currentTimeMillis()
+    val timeInMillis = this.seconds * 1000 + this.nanoseconds / 1000000
+    val diffInMillis = now - timeInMillis
+
+    return when {
+        diffInMillis < 60 * 1000 -> "Just now"
+        diffInMillis < 60 * 60 * 1000 -> "${diffInMillis / (60 * 1000)} minutes ago"
+        diffInMillis < 24 * 60 * 60 * 1000 -> "${diffInMillis / (60 * 60 * 1000)} hours ago"
+        diffInMillis < 48 * 60 * 60 * 1000 -> "Yesterday"
+        else -> {
+            val calendar = Calendar.getInstance()
+            calendar.timeInMillis = timeInMillis
+            val day = calendar.get(Calendar.DAY_OF_MONTH)
+            val month = calendar.get(Calendar.MONTH) + 1
+            val year = calendar.get(Calendar.YEAR)
+            "$day/$month/$year"
+        }
+    }
+}
+
+fun Int?.toAbsoluteTwoDigitString(): String? {
+    return this?.let {
+        String.format(Locale.getDefault(),"%02d", it)
+    }
+}
 
