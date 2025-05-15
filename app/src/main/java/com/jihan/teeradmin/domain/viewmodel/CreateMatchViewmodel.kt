@@ -21,6 +21,8 @@ class CreateMatchViewModel : ViewModel() {
     val firstRoundTime = mutableStateOf("")
     val secondRoundTime = mutableStateOf("")
     val matchId = mutableStateOf("")
+    val numberMultiplier = mutableStateOf("")
+    val homeMultiplier = mutableStateOf("")
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading = _isLoading.asStateFlow()
@@ -53,7 +55,9 @@ class CreateMatchViewModel : ViewModel() {
                     "isFrOpened" to true,
                     "isSrOpened" to true,
                     "createdAt" to Timestamp.now(),
-                    "id" to matchId.value.toIntOrNull()
+                    "id" to matchId.value.toIntOrNull(),
+                    "numberMultiplier" to numberMultiplier.value.toLong(),
+                    "homeMultiplier" to homeMultiplier.value.toLong(),
                 )
 
                 db.collection("matches")
@@ -98,6 +102,14 @@ class CreateMatchViewModel : ViewModel() {
                 _errorMessage.value = "Please enter a valid match ID"
                 return false
             }
+            numberMultiplier.value.toLongOrNull()==null-> {
+                "Please enter a valid Number Multiplier"
+                return false
+            }
+            homeMultiplier.value.toLongOrNull()==null->{
+                "Please enter valid Home & End Multiplier"
+                return false
+            }
             else -> {
                 return true
             }
@@ -112,5 +124,7 @@ class CreateMatchViewModel : ViewModel() {
         firstRoundTime.value = ""
         secondRoundTime.value = ""
         matchId.value = ""
+        numberMultiplier.value=""
+        homeMultiplier.value=""
     }
 }
