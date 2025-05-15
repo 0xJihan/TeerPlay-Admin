@@ -1,5 +1,7 @@
 package com.jihan.teeradmin.presentation.screens
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -36,18 +39,22 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -70,18 +77,22 @@ import com.composables.icons.lucide.Lucide
 import com.composables.icons.lucide.Save
 import com.composables.icons.lucide.Smile
 import com.jihan.composeutils.CenterBox
+import com.jihan.composeutils.Cx
+import com.jihan.composeutils.CxButton
 import com.jihan.composeutils.Gap
 import com.jihan.composeutils.isNumber
 import com.jihan.composeutils.text
 import com.jihan.composeutils.toast
 import com.jihan.teeradmin.Routes
 import com.jihan.teeradmin.data.models.MatchDetail
+import com.jihan.teeradmin.domain.utils.toAbsoluteTwoDigitString
 import com.jihan.teeradmin.domain.viewmodel.EditMatchViewModel
+import com.jihan.teeradmin.presentation.components.ConfirmationDialog
+import com.jihan.teeradmin.presentation.components.LoadingDialog
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -91,13 +102,12 @@ fun EditMatchScreen(
 ) {
 
 
-    if(matchDetail==null){
+    if (matchDetail == null) {
         CenterBox {
             "Invalid Match ID".text.size(25).make()
         }
         return
     }
-
 
 
     val context = LocalContext.current
@@ -117,6 +127,7 @@ fun EditMatchScreen(
     val viewModel = koinViewModel<EditMatchViewModel>()
 
     val isLoading by viewModel.isLoading.collectAsState()
+    var loadingDialog by remember { mutableStateOf(false) }
     val isInitialLoading by viewModel.isInitialLoading.collectAsState()
     val isSuccess by viewModel.isSuccess.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -124,6 +135,93 @@ fun EditMatchScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+
+    var showMoveToHistoryDialog by remember { mutableStateOf(false) }
+
+    if (showMoveToHistoryDialog) {
+        ConfirmationDialog(
+            title = "Move To History",
+            message = "Are you sure you want to move this match to history? \nDistribute Prize before moving match to History.\n\n This action cannot be undone.",
+            confirmButtonText = "Move",
+            dismissButtonText = "Cancel",
+            onConfirm = {
+                loadingDialog = true
+                viewModel.moveToHistory(
+                    matchId = matchDetail.documentId,
+                    onSuccess = {
+                        Handler(Looper.getMainLooper()).post {
+                        "Match moved to history successfully".toast(context)
+                        loadingDialog = false
+                        navigate(null)
+                        }
+                    },
+                ) {
+                    Handler(Looper.getMainLooper()).post {
+                    it.toast(context)
+                    loadingDialog = false
+                    }
+                }
+            },
+            onDismiss = {
+                showMoveToHistoryDialog = false
+            },
+        )
+    }
+
+
+    LoadingDialog(loading = loadingDialog)
+
+    var showDistributeDialog by remember { mutableStateOf(false) }
+
+    if (showDistributeDialog) {
+        ChipSelectionDialog(
+            title = "Distribute Prizes",
+            firstOption = "First Round",
+            secondOption = "Second Round",
+            confirmButtonText = "Distribute",
+            dismissButtonText = "Cancel",
+            onConfirm = { selectedIndex ->
+
+                try {
+
+                    val winNumber = if (selectedIndex == 0) frNumber.toIntOrNull()
+                        .toAbsoluteTwoDigitString() else srNumber.toIntOrNull()
+                        .toAbsoluteTwoDigitString()
+
+                    if (winNumber == null) {
+                        "Invalid Number : $winNumber".toast(context)
+                        return@ChipSelectionDialog
+                    }
+
+                    showDistributeDialog = false
+                    loadingDialog = true
+                    viewModel.distributePrizes(
+                        winNumber = winNumber,
+                        numberMultiplier = numberMultiplier.toDouble(),
+                        houseAndEndingMultiplier = homeMultiplier.toDouble(),
+                        matchId = matchDetail.documentId,
+                        isFr = selectedIndex == 0,
+                        onSuccess = {
+                            "Prize distributed successfully".toast(context)
+                            loadingDialog = false
+                        },
+                        onError = {
+                            it.toast(context)
+                            loadingDialog = false
+                        }
+                    )
+
+                } catch (e: Exception) {
+                    loadingDialog = false
+                    e.printStackTrace()
+                }
+            },
+            chip1Enabled = frNumber.toIntOrNull() != null,
+            chip2Enabled = srNumber.toIntOrNull() != null
+        ) {
+            showDistributeDialog = false
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -198,6 +296,12 @@ fun EditMatchScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
+                CxButton("Move To History",
+                    Modifier.fillMaxWidth()
+                    ) { showMoveToHistoryDialog = true }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
                 // Form Content with beautiful card
                 Card(
                     modifier = Modifier
@@ -248,14 +352,14 @@ fun EditMatchScreen(
                             value = numberMultiplier,
                             onValueChange = { numberMultiplier = it },
                             label = "Number Multiplier"
-                          )
+                        )
 
                         Gap(16)
                         CustomTextField(
                             value = homeMultiplier,
                             onValueChange = { homeMultiplier = it },
                             label = "House & Ending Multiplier"
-                          )
+                        )
 
                         Gap(16)
 
@@ -265,7 +369,7 @@ fun EditMatchScreen(
                             onValueChange = { date = it },
                             onDatePickerClick = { showDatePicker = true })
 
-                       Gap(24)
+                        Gap(24)
                         // First Round Status Switch
                         SwitchToggle(
                             text = "First Round Status",
@@ -281,7 +385,7 @@ fun EditMatchScreen(
                             isOpened = isSrOpened,
                             onCheckedChange = { isSrOpened = it }
                         )
-                       Gap(24)
+                        Gap(24)
 
                         // Round Section
                         Text(
@@ -446,14 +550,15 @@ fun EditMatchScreen(
 
                 Spacer(modifier = Modifier.height(32.dp))
 
-                val isButtonEnabled = id.isNumber() && title.isNotEmpty() && date.isNotEmpty() && frTime.isNotEmpty() && srTime.isNotEmpty()
+                val isButtonEnabled =
+                    id.isNumber() && title.isNotEmpty() && date.isNotEmpty() && frTime.isNotEmpty() && srTime.isNotEmpty()
 
 
                 //! Update Button
                 Button(
                     onClick = {
 
-                        if (numberMultiplier.toDoubleOrNull()==null || homeMultiplier.toDoubleOrNull()==null){
+                        if (numberMultiplier.toDoubleOrNull() == null || homeMultiplier.toDoubleOrNull() == null) {
                             "Invalid Multiplier".toast(context)
                             return@Button
                         }
@@ -468,12 +573,12 @@ fun EditMatchScreen(
                             "frTime" to frTime,
                             "srTime" to srTime,
                             "isFrOpened" to isFrOpened,
-                            "isSrOpened" to isSrOpened ,
+                            "isSrOpened" to isSrOpened,
                             "numberMultiplier" to numberMultiplier.toDouble(),
                             "homeMultiplier" to homeMultiplier.toDouble(),
 
 
-                        )
+                            )
 
 
 
@@ -515,7 +620,21 @@ fun EditMatchScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Gap(16)
+                CxButton(
+                    "Distribute Prize",
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp),
+                    cornerRadius = 50,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Cx.red500,
+                        contentColor = Color.White
+                    )
+                ) {
+                    showDistributeDialog = true
+                }
+                Gap(32)
             }
         }
 
@@ -551,37 +670,23 @@ fun EditMatchScreen(
 
         // Delete Confirmation Dialog
         if (showDeleteConfirmation) {
-            AlertDialog(
-                onDismissRequest = { showDeleteConfirmation = false },
-                title = {
-                    Text("Delete Match")
-                },
-                text = {
-                    Text("Are you sure you want to delete this match? This action cannot be undone.")
-                },
-                confirmButton = {
-                    Button(
-                        onClick = {
-                            viewModel.deleteMatch(matchId = matchDetail.documentId) {
-                                showDeleteConfirmation = false
-                                navigate(null)
-                            }
-                        }, colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFF5252)
-                        )
-                    ) {
-                        Text("Delete")
+
+            ConfirmationDialog(
+                title = "Delete Match",
+                message = "Are you sure you want to delete this match? This action cannot be undone.",
+                confirmButtonText = "Delete",
+                dismissButtonText = "Cancel",
+                onConfirm = {
+                    viewModel.deleteMatch(matchId = matchDetail.documentId) {
+                        showDeleteConfirmation = false
+                        navigate(null)
                     }
                 },
-                dismissButton = {
-                    OutlinedButton(onClick = { showDeleteConfirmation = false }) {
-                        Text("Cancel")
-                    }
+                onDismiss = {
+                    showDeleteConfirmation = false
                 },
-                containerColor = Color(0xFF32323E),
-                titleContentColor = Color.White,
-                textContentColor = Color.LightGray
             )
+
         }
 
         // Success Message Overlay
@@ -740,3 +845,82 @@ fun SwitchToggle(
         }
     }
 }
+
+
+@Composable
+fun ChipSelectionDialog(
+    title: String,
+    firstOption: String,
+    secondOption: String,
+    chip1Enabled: Boolean = true,
+    chip2Enabled: Boolean = true,
+    confirmButtonText: String = "Confirm",
+    dismissButtonText: String = "Cancel",
+    onConfirm: (selectedIndex: Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    // Track which option is selected (0 for first, 1 for second)
+    var selectedOption by remember { mutableIntStateOf(-1) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectableGroup(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // First option chip
+                    FilterChip(
+                        enabled = chip1Enabled,
+                        selected = selectedOption == 0,
+                        onClick = { selectedOption = 0 },
+                        label = { Text(firstOption) }
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Second option chip
+                    FilterChip(
+                        enabled = chip2Enabled,
+                        selected = selectedOption == 1,
+                        onClick = { selectedOption = 1 },
+                        label = { Text(secondOption) }
+                    )
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(selectedOption)
+                },
+                enabled = (chip1Enabled || chip2Enabled) && selectedOption != -1,
+            ) {
+                Text(confirmButtonText)
+            }
+        },
+        dismissButton = {
+            TextButton(
+                onClick = onDismiss
+            ) {
+                Text(dismissButtonText)
+            }
+        }
+    )
+}
+
+
